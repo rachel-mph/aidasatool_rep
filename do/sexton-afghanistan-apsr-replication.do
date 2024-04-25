@@ -1,19 +1,38 @@
-**************
-*** Aid as a Tool against Insurgency
-*** Renard Sexton, July 2016
-*** Replication code
-***************
+********************************************************************************
+** 	TITLE	: pol_econ_replication 
+**	PURPOSE	: This .do replicates the main tables from Sextion 2016 
+**	AUTHOR	: Rachel Pizatella
+**	DATE	: 04/10/2024 | DATE MODIFIED: 04/24/2024
+********************************************************************************
 
-*** Created in STATA/MP version 13.1
+*********************************** GLOBALS ************************************
 
 clear all
 set mem 1g
 set matsize 4000
 set more off
 
-** Change to appropriate working directory
+**# directories  
+*------------------------------------------------------------------------------*
+	* Define username
+	global suser = c(username)
 
-cd "~/Downloads/"
+	* Rachel Pizatella-Haswell
+	else if "${suser}" == "rachelhaswell" {
+		global cwd = "/Users/rachelhaswell/Documents/pol econ/replication/aidasatool"
+	}
+
+	gl do					"$cwd/do"			
+	gl da 					"$cwd/data"		
+	gl ta 					"$cwd/outputs"	
+
+**# datasets 
+*------------------------------------------------------------------------------*
+	* aid data  
+	gl aid_merged	  		"$da/sexton-afg-apsr.dta"
+	
+	* district coords
+	gl coords 				"$da/district_coords.dta"
 
 ** You need the following files in addition to this .do file:
 
@@ -24,7 +43,7 @@ cd "~/Downloads/"
 * Run dependency .do file
 ********************
 
-do sexton-afghanistan-apsr-replication-dependency
+do "$do/sexton-afghanistan-apsr-replication-dependency"
 
 ** Load and label data
 
@@ -39,19 +58,38 @@ label_var
 ** week 1 excluded from main sample due to lag structure
 sum pop10k troops CERPdummy CERPdollars_pcap type3_pcap type5_pcap type18_pcap type19_pcap budget_pcap if sample==1 & week!=1
 
-********************
-** Main Results (Table 4)
-********************
+**# Table 4 
+*------------------------------------------------------------------------------*
+	* import datasets
+	use "$aid_merged", clear 
 
-eststo clear
-foreach y in 3 18 19{
-rename type`y'_pcap y_pcap
-reg y_pcap c.CERPdollars_pcap##L.troops L.y_pcap  L.c.CERPdollars_pcap##L2.troops i.week i.districtid if sample==1 , vce(cl districtid)
-eststo
-rename y_pcap type`y'_pcap
-}
-estout using results1.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(2))) ///
- style(tex) keep(CERPdollars_pcap 1L.troops#c.CERPdollars_pcap 1L.troops L.y_pcap L.CERPdollars_pcap 1L2.troops 1L2.troops#cL.CERPdollars_pcap  )
+	* clean variable names 
+	ren type3_pcap bombings
+	ren type18_pcap enemy_actions
+	ren type19_pcap exp_hazards
+	
+	ren troops controlled
+	
+	ren CERPdollars_pcap CERP
+	
+	ren type3_pcap_neighbor bombings_neighb 
+	ren type18_pcap_neighbor enemy_actions_neighb
+	ren type19_pcap_neighbor exp_hazards_neighb
+	
+	* generate lagged variables 
+	tsset districtid week
+	
+	foreach var of varlist controlled CERP bombings enemy_actions exp_hazards ///
+	bombings_neighb enemy_actions_neighb exp_hazards_neighb {
+		gen `var'_L1 = L1.`var'
+		gen `var'_L2 = L2.`var'
+	}
+	
+	* run regression 
+	foreach var of varlist bombings enemy_actions exp_hazards {
+		reg `var' c.CERP##controlled_L1 L.c.CERP##controlled_L2 `var'_L1 ///
+		i.districtid i.week if sample==1 , vce(cl districtid)
+	}
 
 ********************
 ** Predicted Effects (Figures 4, 5 and 6)
@@ -114,33 +152,48 @@ texsave t unsecured_mean unsecured_se secured_mean secured_se id2 if id1==12 usi
 ********************
 ** Geographic Spillovers (Table 7, 8)
 ********************
+**# Table 7
+*------------------------------------------------------------------------------*	
+	* import datasets
+	use "$aid_merged", clear 
 
-use sexton-afg-apsr, clear
-tsset districtid week
-label_var
-
-eststo clear
-foreach y in 3 18 19 {
-	rename type`y'_pcap_neighbor neighbor
-	rename type`y'_pcap y_pcap
-	reg y_pcap c.CERPdollars_pcap##L.troops L.y_pcap L.c.CERPdollars_pcap##L2.troops neighbor L.neighbor i.week i.districtid if sample==1, vce(cl districtid)
-	eststo
-	rename y_pcap type`y'_pcap
-	rename neighbor type`y'_pcap_neighbor
+	* clean variable names 
+	ren type3_pcap bombings
+	ren type18_pcap enemy_actions
+	ren type19_pcap exp_hazards
+	
+	ren troops controlled
+	
+	ren CERPdollars_pcap CERP
+	
+	ren type3_pcap_neighbor bombings_neighb 
+	ren type18_pcap_neighbor enemy_actions_neighb
+	ren type19_pcap_neighbor exp_hazards_neighb
+	
+	* generate lagged variables 
+	tsset districtid week
+	
+	foreach var of varlist controlled CERP bombings enemy_actions exp_hazards ///
+	bombings_neighb enemy_actions_neighb exp_hazards_neighb {
+		gen `var'_L1 = L1.`var'
+		gen `var'_L2 = L2.`var'
 	}
-estout using spatial1.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(2))) ///
- style(tex) keep(CERPdollars_pcap 1L.troops#c.CERPdollars_pcap neighbor L.neighbor 1L.troops L.y_pcap L.CERPdollars_pcap 1L2.troops 1L2.troops#cL.CERPdollars_pcap  )
-
- 
- eststo clear
- foreach y in 3 18 19 {
-	rename type`y'_pcap_neighbor neighbor
-	reg neighbor c.CERPdollars_pcap##L.troops L.neighbor L.c.CERPdollars_pcap##L2.troops i.week i.districtid if sample==1, vce(cl districtid)
-	eststo
-	rename neighbor type`y'_pcap_neighbor
+	* run regression 
+	foreach var of varlist bombings enemy_actions exp_hazards {
+		reg `var' c.CERP##controlled_L1 L.c.CERP##controlled_L2 `var'_L1 ///
+		`var'_neighb `var'_neighb_L1 i.districtid i.week if sample==1 , vce(cl districtid)
 	}
-estout using spatial2.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(2))) ///
- style(tex) keep(CERPdollars_pcap 1L.troops#c.CERPdollars_pcap L.neighbor 1L.troops L.CERPdollars_pcap 1L2.troops 1L2.troops#cL.CERPdollars_pcap  )
+	
+	/* DONE */
+	
+
+**# Table 8
+*------------------------------------------------------------------------------*	
+	* run regression 
+	foreach var of varlist bombings enemy_actions exp_hazards {
+		reg `var'_neighb c.CERP##controlled_L1 L.c.CERP##controlled_L2 ///
+		`var'_neighb_L1 i.districtid i.week if sample==1 , vce(cl districtid)
+	}
 	
 
 ********************
