@@ -66,7 +66,7 @@ end
 ** 1. Constructing cumulative effects (IRF)
 
 ** 1.1 Outcome: Bombings (ANSO) Figure 4
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 
 reg type3_pcap c.CERPdollars_pcap##L.troops L.type3_pcap  L.c.CERPdollars_pcap##L2.troops ///
@@ -121,7 +121,7 @@ save bombings_projected,replace
 
 
 ** 1.2 Outcome: Enemy Actions (CIDNE) Figure 5
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 
 reg type18_pcap c.CERPdollars_pcap##L.troops L.type18_pcap  L.c.CERPdollars_pcap##L2.troops ///
@@ -176,7 +176,7 @@ replace `x'=(`x'*1.25)
 save enemyactions_projected,replace
 
 ** 1.3 Outcome: Explosive Hazards (CIDNE) Figure 6
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 
 reg type19_pcap c.CERPdollars_pcap##L.troops L.type19_pcap  L.c.CERPdollars_pcap##L2.troops ///
@@ -238,7 +238,7 @@ save explosive_projected,replace
 
 foreach x in 13 12{
 	foreach y in 3 18 19 {
-		use sexton-afg-apsr, clear
+		use "$da/sexton-afg-apsr", clear
 		tsset districtid week
 
 		reg type`y'_pcap c.CERPdollars_`x'_pcap##L.troops L.type`y'_pcap  L.c.CERPdollars_`x'_pcap##L2.troops ///
@@ -306,7 +306,7 @@ save predicted_projects,replace
 ** 3. Appendix
 
 ** Collapse to 2 and 4 weeks
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 
 gen twoweek=ceil(week/2)
@@ -362,7 +362,7 @@ save bombings_twoweek_projected,replace
 
 ** Four weeks
 
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 
 gen fourweek=ceil(week/4)
@@ -418,7 +418,7 @@ save bombings_fourweek_projected,replace
 
 ** One week est. sd
 
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 
 reg type3_pcap c.CERPdollars_pcap##L.troops L.type3_pcap  L.c.CERPdollars_pcap##L2.troops ///

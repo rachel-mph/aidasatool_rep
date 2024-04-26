@@ -19,7 +19,7 @@ set more off
 
 	* Rachel Pizatella-Haswell
 	else if "${suser}" == "rachelhaswell" {
-		global cwd = "/Users/rachelhaswell/Documents/pol econ/replication/aidasatool"
+		global cwd = "/Users/rachelhaswell/Documents/github/aidasatool_rep"
 	}
 
 	gl do					"$cwd/do"			
@@ -31,9 +31,6 @@ set more off
 	* aid data  
 	gl aid_merged	  		"$da/sexton-afg-apsr.dta"
 	
-	* district coords
-	gl coords 				"$da/district_coords.dta"
-
 ** You need the following files in addition to this .do file:
 
 ** sexton-afg-apsr.dta
@@ -47,7 +44,7 @@ do "$do/sexton-afghanistan-apsr-replication-dependency"
 
 ** Load and label data
 
-use sexton-afg-apsr, clear
+use "$aid_merged", clear
 tsset districtid week
 label_var
 
@@ -199,10 +196,11 @@ texsave t unsecured_mean unsecured_se secured_mean secured_se id2 if id1==12 usi
 ********************
 ** Northern Distribution Network (Table 9)
 ********************
-
+use "$da/sexton-afg-apsr", clear
 gen tag=(province=="Baghlan" | province=="Balkh" | province=="Samangan" | province=="Parwan")
 gen after=(week>=42)
 
+tsset districtid week
 eststo clear
 foreach y in 3 18 19{
 rename type`y'_pcap y_pcap
@@ -387,7 +385,7 @@ estout using arellano.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(2)
 
 
 * Appendix C: Robustness Checks
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 label_var
 
@@ -437,7 +435,7 @@ use projected_multiweek,clear
 texsave using multiweek.tex,replace 
 
 ** Regression outputs for multiweek aggregation
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 label_var
 
@@ -467,7 +465,7 @@ estout using aggregate1.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(
 
 ** Reporting bias
 
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 label_var
 
@@ -523,7 +521,7 @@ estout using influence2.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(
  style(tex) keep(CERPdollars_pcap 1L.troops#c.CERPdollars_pcap 1L.troops L.y_pcap L.CERPdollars_pcap 1L2.troops 1L2.troops#cL.CERPdollars_pcap  )
 	
 	** Geographic Sub-samples (South and East)
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 label_var	
 	* South
@@ -552,7 +550,7 @@ estout using east1.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(2))) 
  style(tex) keep(CERPdollars_pcap 1L.troops#c.CERPdollars_pcap 1L.troops L.y_pcap L.CERPdollars_pcap 1L2.troops 1L2.troops#cL.CERPdollars_pcap  )
 
  	** Varying time effects
-use sexton-afg-apsr, clear
+use "$da/sexton-afg-apsr", clear
 tsset districtid week
 label_var
 ** two and four week fixed effects
@@ -628,7 +626,7 @@ estout using missing1.tex, replace stats(r2 N)cells(b(star fmt(2)) se(par fmt(2)
 
  *Appendix E: Additional Northern Distribution Network Figures
  
- use sexton-afg-apsr, clear
+ use "$da/sexton-afg-apsr", clear
 tsset districtid week
 label_var
 
